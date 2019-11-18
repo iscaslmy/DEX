@@ -83,6 +83,6 @@ def text_classification():
     svm_model(tfidf_train, y_train, tfidf_test, y_test)
 
 
-
 if __name__ == '__main__':
     text_classification()
+

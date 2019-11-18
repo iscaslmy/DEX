@@ -26,6 +26,7 @@ from md_config import getConfig
 ################################################################################################################
 
 
+
 def init_hyper_parameters():
     """
     初始化相关参数，只是当前类是主类运行时候会被调用
@@ -85,6 +86,9 @@ def init_hyper_parameters():
     # 编辑距离相似度阈值
     global sim_t
     sim_t = float(getConfig('training', 'sim_t'))
+
+    # DE-oriented language model
+    lmmodel = kenlm.Model('DE_oriented_language_model/datafp.arpa')
 
 # all samples grouped by story_id
 # key: story_id       value: list:DataSample对象
@@ -176,10 +180,6 @@ def cal_confidence_score(sample, model_name):
         if label == 'B' or label == 'I' or label == 'E':
             fp += chars[index]
         if label == 'N' and len(fp) > 0:
-            fp = fp.replace('的', '')
-            if '国税' in fp or '公积金' in fp or '个税' in fp:
-                fp = ''
-                continue
             fp_list.append(fp)
             fp = ''
 
@@ -187,17 +187,9 @@ def cal_confidence_score(sample, model_name):
     crf_confidence = model.probability(predicted_labels)
 
     lan_confidence = 0
-    global lm_threshold
     filtered_fp_list = []
     for fp_name in fp_list:
-        if len(fp_name) == 0 or len(fp_name) > 12:
-            continue
-        data_fp_name = ' '.join(list(fp_name))
-        lan_confidence_temp = -1
-        if len(re.findall('[a-zA-Z0-9+]+', fp_name)) > 0:
-            lan_confidence_temp += 5
-        if lan_confidence_temp > lm_threshold:
-            filtered_fp_list.append(fp_name)
+        filtered_fp_list.append(fp_name)
 
     if len(filtered_fp_list) == 0:
         predicted_fps = 'null'
@@ -587,30 +579,6 @@ def evaluate_model_by_story(model_name, test_samples):
     return precision, recall, f1
 
 
-def get_all_labeled_data_lm_scores():
-    all_samples = samples_dao.read_all_labeled_samples_by_story()
-    all_story_count = 0
-    all_fps_count = 0
-    for samples in all_samples.values():
-        all_fps = set()
-        all_story_count += 1
-        for sample in samples:
-            fps = sample.fps
-            for fp_name in fps:
-                all_fps.add(fp_name)
-                if len(fp_name) == 0 or fp_name == 'null':
-                    continue
-                data_fp_name = ' '.join(list(fp_name))
-                lan_confidence_temp = -1
-                if len(re.findall('[a-zA-Z0-9+]+', fp_name)) > 0:
-                    lan_confidence_temp += 5
-
-                # print("%s: %f" % (fp_name, lan_confidence_temp))
-        all_fps_count += len(all_fps)
-
-    print(all_story_count)
-    print(all_fps_count)
-
 def mkdir(path):
     path = path.strip()
     path = path.rstrip("\\")
@@ -620,25 +588,16 @@ def mkdir(path):
         os.makedirs(path)
 
 if __name__ == '__main__':
-    # get_all_labeled_data_lm_scores()
-    # get_all_labeled_data_lm_scores()
-    # global lmmodel
-    # lmmodel = kenlm.Model('lm/datafp.arpa')
+    init_hyper_parameters()
 
-    # init_hyper_parameters()
-    #
     # iteration_num = md_config.getConfig('training', 'iteration_num')
-    # mkdir('../Archive')
-    # mkdir('../Archive/date_performance/')
-    # mkdir('../Archive/date_performance/models/')
-    # mkdir('../Archive/date_performance/results/')
-    # semi_supervised_data_function_extract(iteration_num)
+    # crf-bootstrapping algorithm
+    mkdir('../Archive')
+    mkdir('../Archive/date_performance/')
+    mkdir('../Archive/date_performance/models/')
+    mkdir('../Archive/date_performance/results/')
+    semi_supervised_data_function_extract(iteration_num)
+
+    # DE-oriented language model filtering
 
 
-    # predicted_all_unlabeled_samples('./Archive/date_performance/models/model_23', 100000)
-    # iteration_number = 100
-    # semi_supervised_data_function_extract(iteration_number)
-    # training, test = data_preparation.divide_samples_into_seeds_and_test(0.9, True)
-    # training.extend(test)
-    # evaluate_model_by_story('./Archive/date_performance/models/model_23', training)
-    print('???')

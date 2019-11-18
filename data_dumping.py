@@ -1,10 +1,6 @@
 import json
-import os
-
-from sql_helper import SQLHelper
 
 
-sql_helper = SQLHelper(dbHost='192.168.15.208', dbUser='foo', dbPasswd='123', dbName='FP', dbPort=3306)
 def dump_history_data_fps():
     """
     读取历史数据功能点的所有数据，用于过滤最后推荐的数据功能点
