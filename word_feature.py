@@ -38,27 +38,27 @@ def unserialize_object(d):
         return d
 
 
-# if os.path.exists('labeled_story.json'):
-#     with open('labeled_story.json', encoding='utf-8') as f:
-#         labeled_story = json.load(f, object_hook=unserialize_object)
-#     print('labeled data loaded')
-# else:
-#     labeled_story = read_all_labeled_samples_by_story()
-#     with open('labeled_story.json', 'wb') as f:
-#         data = json.dumps(labeled_story, default=serialize_instance, ensure_ascii=False)
-#         f.write(data.encode('utf8', 'replace'))
-#     print('labeled story dumped')
-#
-# if os.path.exists('unlabeled_story.json'):
-#     with open('unlabeled_story.json', encoding='utf-8') as f:
-#         unlabeled_story = json.load(f, object_hook=unserialize_object)
-#     print('unlabeled data loaded')
-# else:
-#     unlabeled_story = read_all_unlabeled_samples_by_story()
-#     with open('unlabeled_story.json', 'wb') as f:
-#         data = json.dumps(unlabeled_story, default=serialize_instance, ensure_ascii=False)
-#         f.write(data.encode('utf8', 'replace'))
-#     print('unlabeled story dumped')
+if os.path.exists('labeled_story.json'):
+    with open('labeled_story.json', encoding='utf-8') as f:
+        labeled_story = json.load(f, object_hook=unserialize_object)
+    print('labeled data loaded')
+else:
+    labeled_story = read_all_labeled_samples_by_story()
+    with open('labeled_story.json', 'wb') as f:
+        data = json.dumps(labeled_story, default=serialize_instance, ensure_ascii=False)
+        f.write(data.encode('utf8', 'replace'))
+    print('labeled story dumped')
+
+if os.path.exists('unlabeled_story.json'):
+    with open('unlabeled_story.json', encoding='utf-8') as f:
+        unlabeled_story = json.load(f, object_hook=unserialize_object)
+    print('unlabeled data loaded')
+else:
+    unlabeled_story = read_all_unlabeled_samples_by_story()
+    with open('unlabeled_story.json', 'wb') as f:
+        data = json.dumps(unlabeled_story, default=serialize_instance, ensure_ascii=False)
+        f.write(data.encode('utf8', 'replace'))
+    print('unlabeled story dumped')
 
 iteration_story = []
 
@@ -87,18 +87,18 @@ class word_feature:
         """
 
         # get all story sentences by id
-        # if self.label_data:
-        #     if self.sample.story_id in labeled_story:
-        #         sentences = [s.sentence for s in labeled_story[self.sample.story_id]]
-        #     else:
-        #         sentences = [s.sentence for s in iteration_story[self.sample.story_id]]
-        # else:
-        #     sentences = [s.sentence for s in unlabeled_story[self.sample.story_id]]
+        if self.label_data:
+            if self.sample.story_id in labeled_story:
+                sentences = [s.sentence for s in labeled_story[self.sample.story_id]]
+            else:
+                sentences = [s.sentence for s in iteration_story[self.sample.story_id]]
+        else:
+            sentences = [s.sentence for s in unlabeled_story[self.sample.story_id]]
 
         # self.postag = [self.postag(self.sample.sentence, word) for word in self.words]
 
         # tf-idf
-        # self.tfidf = [self.char_tf_idf(sentences, char) for char in self.chars]
+        self.tfidf = [self.char_tf_idf(sentences, char) for char in self.chars]
 
         # textrank
         # self.tr = [self.text_rank(sentences, word) for word in self.words]
@@ -115,9 +115,11 @@ class word_feature:
                     # print(char_index-2+index)
                     feature['postag'] = self.postags[char_index-8+index]
                     feature['char'] = self.chars[char_index-8+index]
+                    feature['tf-idf'] = self.tf_idf[char_index-8+index]
                 else:
-                    feature['postag'] = ''
-                    feature['char'] = ''
+                    feature['postag'] = 'NULL'
+                    feature['char'] = 'NULL'
+                    feature['tf-idf'] = -1
 
                 # feature['tfidf'] = self.tfidf[index]
                 # feature['tr'] = self.tr[index]
@@ -204,11 +206,8 @@ class word_feature:
                 pogs.append(p)
         return pogs
 
-
     def text_rank(self, sentences, word):
-
         """
-
         :param sentences: text sentences
         :param word: word
         :return: textrank value of word
